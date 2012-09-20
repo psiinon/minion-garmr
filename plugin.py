@@ -1,4 +1,5 @@
 from copy import deepcopy
+import sys
 
 def hasKey(collection, key):
  path = key.strip().split('.')
@@ -81,7 +82,7 @@ class MinionPlugin:
             result = self.do_status()
             return result
         except:
-            return create_status(False, "Plugin was unable to report a status: %s" % sys.exc_info()[0], "FAILED")
+            return self.create_status(False, "Plugin was unable to report a status: %s" % sys.exc_info()[0], "FAILED")
 
     def start(self):        
         try:        
@@ -89,11 +90,11 @@ class MinionPlugin:
                 #XXX - Extension Point - do_start(), return create_status()
                 self.do_start()
                 query = self.status()
-                return create_status(query["success"], "Plugin started: %s" % query["message"], query["status"])
+                return self.create_status(query["success"], "Plugin started: %s" % query["message"], query["status"])
             else:
-                return create_status(False, "Plugin could not be started: %s" % query["message"], query["status"])
+                return self.create_status(False, "Plugin could not be started: %s" % query["message"], query["status"])
         except:
-            return create_status(False, "START failed: %s" % sys.exc_info()[0], "FAILED")
+            return self.create_status(False, "START failed: %s" % sys.exc_info()[0], "FAILED")
 
 
     def suspend(self):
@@ -102,11 +103,23 @@ class MinionPlugin:
                 #XXX - Extension Point - do_suspend(), return create_status()
                 self.do_suspend()
                 query = self.status()
-                return create_status(query["success"], "Plugin suspended: %s" % query["message"], query["status"])
+                return self.create_status(query["success"], "Plugin suspended: %s" % query["message"], query["status"])
             else:
-                return create_status(False, "Plugin could not be suspended: %s" % query["message"], query["status"])
+                return self.create_status(False, "Plugin could not be suspended: %s" % query["message"], query["status"])
         except:
-            return create_status(False, "SUSPEND failed: %s" % sys.exc_info()[0], "FAILED")
+            return self.create_status(False, "SUSPEND failed: %s" % sys.exc_info()[0], "FAILED")
+
+    def resume(self):
+        try:            
+            if (self.canEnterState("RESUME")):
+                #XXX - Extension Point - do_resume(), return create_status()
+                self.do_resume()
+                query = self.status()
+                return self.create_status(query["success"], "Plugin resumed: %s" % query["message"], query["status"])
+            else:
+                return self.create_status(False, "Plugin could not be resumed: %s" % query["message"], query["status"])
+        except:
+            return self.create_status(False, "RESUME failed: %s" % sys.exc_info()[0], "FAILED")
 
     def terminate(self):
         try:            
@@ -114,15 +127,15 @@ class MinionPlugin:
                 #XXX - Extension Point - do_terminate(), return create_status()
                 self.do_terminate()
                 query = self.status()
-                return create_status(query["success"], "Plugin terminated: %s" % query["message"], query["status"])
+                return self.create_status(query["success"], "Plugin terminated: %s" % query["message"], query["status"])
             else:
-                return create_status(False, "Plugin could not be terminated: %s" % query["message"], query["status"])
+                return self.create_status(False, "Plugin could not be terminated: %s" % query["message"], query["status"])
         except:
-            return create_status(False, "TERMINATE failed: %s" % sys.exc_info()[0], "FAILED")
+            return self.create_status(False, "TERMINATE failed: %s" % sys.exc_info()[0], "FAILED")
 
     def canEnterState(self, state):
         try:
-            if not state in STATES:
+            if not state in self.STATES:
                 raise("%s is not a valid state.")
             #XXX - Extension Point - do_get_states() : return [] containing available states
             states = self.do_get_states()
